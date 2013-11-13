@@ -92,8 +92,7 @@ class DijkSP(object):
 			self._t = t
 		self._G = G
 		self._distTo = [_INF] * G.V()
-		self._distTo[s] = distance(pos, s, t) 				# for A*
-		#self._distTo[s] = 0 								# for pure Dijkstra
+		self._distTo[s] = 0 								# for pure Dijkstra
 		self._edgeTo = [_SENTINEL] * G.V() 					# edgeTo[v]: last edge on shortest path from s to v
 		self._pq = IndexMinPQ(G.V())
 		self._pq.insert(s, self._distTo[s])                 # insert source into pq
@@ -141,11 +140,8 @@ class DijkSP(object):
 		# priority of edge v-w: 
 		# (length of path from s to v) + e.weight() + distance(w, t)
 		# (length of path from s to v) = distTo[v] - distance(v, t)
-		dist_w_t = distance(pos, w, self._t)
-		dist_v_t = distance(pos, v, self._t)
-		path_len_to_v = self._distTo[v] - dist_v_t
-		if self._distTo[w] > path_len_to_v + edge.weight() + dist_w_t:
-			self._distTo[w] = path_len_to_v + edge.weight() + dist_w_t  	# includes Euclidean heuristic
+		if self._distTo[w] > self._distTo[v] + edge.weight():
+			self._distTo[w] = self._distTo[v] + edge.weight() 
 			self._edgeTo[w] = edge
 			if not self._pq.contains(w):
 					self._pq.insert(w, self._distTo[w])
@@ -186,7 +182,6 @@ spt = DijkSP(usamap, source, target)
 
 # initialize base figure
 fig = plt.figure()
-fig.hold(True)
 ax = fig.add_subplot(111, aspect=True, autoscale_on=True)
 ax.set_xlim(pos[:, 0].min() * -1.1, pos[:, 0].max() * 1.1)
 ax.set_ylim(pos[:, 1].min() * -1.1, pos[:, 1].max() * 1.1)
@@ -196,10 +191,12 @@ line, = ax.plot([], [], linewidth=2, color='red', marker='.')  # creates a Line2
 
 #draw map on canvas: this takes ~5 minutes!
 if args.map:
+	print "beginning to plot map"
 	for e in usamap_UN.edges():
 		v = e.either()
 		w = e.other(v)
 		ax.plot([pos[v, 0], pos[w, 0]], [pos[v, 1], pos[w, 1]], ls='-', color='gray', alpha=.2)
+	print "map plot done"
 
 # xmin, xmax = ax.get_xlim()
 # ymin, ymax = ax.get_ylim()
@@ -215,6 +212,7 @@ def init():
 	return line,
 
 def animate(i):
+	#print 'animate, {}'.format(i)
 	resize=False
 	# set line to new data
 	n = spt.nextVertex[i]
